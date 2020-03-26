@@ -1,24 +1,59 @@
 const express = require('express');
 const router = express.Router();
 const {check, validationResult} = require('express-validator');
-
-
+const User = require('../../modules/User');
+const gravatar = require('gravatar');
+const bcrypt = require('bcryptjs');
 
 //@route    POST api/user
 //@desc     Register user
 //@acess    public
 router.post("/", [
-   check('name', 'Name is required').not().isEmpty(),
-   check('email','Please insert a valid email').isEmail(),
-   check('password','Please enter a password with 6 or more characters').isLength({min:6}) 
-], 
-(req, res) => {
-    const errors = validationResult(req);
-    if(!errors.isEmpty()){
-        return res.status(400).json({errors: errors.array()});
+        check('name', 'Name is required').not().isEmpty(),
+        check('email','Please insert a valid email').isEmail(),
+        check('password','Please enter a password with 6 or more characters').isLength({min:6}) 
+    ], 
+    async (req, res) => {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return res.status(400).json({errors: errors.array()});
+        }
+        
+        //geting data from request
+        const {name, email, password} = req.body;
+
+        try {
+            //check if a user exists
+            let user = await User.findOne({email}); //anything that returns data we must put await beacause we are using async method
+            if(user) {
+                return res.status(400).json({errors: {"msg": "Email is already registred"}})
+            }
+
+            //get user avatar from gravatr.com
+            const avatar = gravatar.url(email, {
+                s: '200',
+                r: 'pg',
+                d: 'mm'
+            });
+
+            //create a user object
+            user = new User({name, email, avatar, password});
+
+            //encrypt password
+            const salt =  await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+            
+            await user.save(); //saves on db
+
+            //return jsonwebtoken -> to confirm tha the user is registrated and ready form login
+            
+            //console.log(req.body);
+            res.send("User registred");
+        } catch (error) {
+            console.error(error.message);
+            res.status(500).send("Server error: "+error.message);
+        }
     }
-    console.log(req.body);
-    res.send("User route");
-});
+);
 
 module.exports = router;
