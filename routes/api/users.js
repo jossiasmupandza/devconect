@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const {check, validationResult} = require('express-validator');
-const User = require('../../modules/User');
 const gravatar = require('gravatar');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const config = require('config');
+const User = require("../../modules/User");
+const { check, validationResult } = require("express-validator");
 
 //@route    POST api/user
 //@desc     Register user
@@ -46,9 +48,24 @@ router.post("/", [
             await user.save(); //saves on db
 
             //return jsonwebtoken -> to confirm tha the user is registrated and ready form login
-            
+            const payload = {
+                user: {
+                    id: user.id
+                }
+            }
+            jwt.sign(
+                payload,
+                config.get('jwtSecret'),
+                {expiresIn:36000},
+                (err, token) => {
+                    if(err) throw err;
+                    res.json({token});
+                }
+            );
+
+
             //console.log(req.body);
-            res.send("User registred");
+            //res.send("User registred");
         } catch (error) {
             console.error(error.message);
             res.status(500).send("Server error: "+error.message);
