@@ -28,7 +28,7 @@ router.post("/", [
             //check if a user exists
             let user = await User.findOne({email}); //anything that returns data we must put await beacause we are using async method
             if(user) {
-                return res.status(400).json({errors: {"msg": "Email is already registred"}})
+                return res.status(400).json({errors: {msg: "Email is already registred"}})
             }
 
             //get user avatar from gravatr.com
