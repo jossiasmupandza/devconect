@@ -63,7 +63,6 @@ router.post("/", [
                 }
             );
 
-
             //console.log(req.body);
             //res.send("User registred");
         } catch (error) {
