@@ -25,10 +25,10 @@ router.get("/me", auth, async (req, res) => {
 //@route    POST api/profile
 //@desc     Creat or Update a profile
 //@acess    Private
-router.post('/', [
-    auth,
-    check('status','Status is required').not().isEmpty(),
-    check('skills', 'Skills is required').not().isEmpty()
+router.post('/', [ auth, [
+        check('status','Status is required').not().isEmpty(),
+        check('skills', 'Skills is required').not().isEmpty()
+    ]
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -151,5 +151,55 @@ router.delete("/", auth, async (req, res) => {
         res.status(500).send("Server error");
     }
 });
+
+//@route    PUT api/profile/experience => we use put to update an existing field
+//@desc     Add's expirience in profile
+//@acess    Private
+router.put('/experience', [ auth, [
+    check('title','Title is required').not().isEmpty(),
+    check('company', 'Company is required').not().isEmpty(),
+    check('from', 'From is required').not().isEmpty()
+]], async (req, res) => {
+    const errors = validationResult(req);
+    if(!errors)
+        return res.status(400).json({ errors: errors.array() });
+    
+    const {
+        title,
+        company,
+        location,
+        from,
+        to,
+        current,
+        descripition
+    } = req.body;
+
+    //creat's object with the data that the user submited
+    const newExp = {
+        title,
+        company,
+        location,
+        from,
+        to,
+        current,
+        descripition
+    };
+
+    try {
+        const profile = await Profile.findOne({user: req.user.id});
+        if(!profile)
+            return res.status(400).json({msg: "There are no profiles for this user"});
+       
+        profile.experience.unshift(newExp);
+
+        await profile.save();
+
+        res.json(profile);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Server error: '+error.message);
+    }
+
+})
 
 module.exports = router;
